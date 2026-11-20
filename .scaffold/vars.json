@@ -11,10 +11,15 @@
   "KEYWORDS": "\"apple-mail\", \"mail\", \"email\", \"macos\", \"jxa\", \"cli\", \"agent\"",
   "SCOPE_HELP": "mailbox paths `Account/Mailbox/Sub` (local: `On My Mac/Name`)",
   "WRITE_OPS": "`mark`, `move`, `delete`, `mailbox-create`",
-  "SYSTEM_POLICY": "/Library/Application Support/agent-cli/apple-mail.json",
   "INJECTION": "Static JXA script (`go:embed`). Input travels only as one JSON argv element to `/usr/bin/osascript` (absolute path), and fuzz tests check the script and argv shape are invariant. Message bodies are parsed in Go (MIME, HTML to text), never in Mail.",
   "SECRETS": "No credentials are involved, and the CLI has **no send, draft or forward command**. Attachment contents are never read.",
   "NETWORK": "",
-  "POLICY": "{\n  \"version\": 1,\n  \"operations\": { \"allow\": [\"read\", \"mark\", \"move\"], \"deny\": [\"delete\"] },\n  \"scopes\": {\n    \"read\":  { \"allow\": [\"*\"], \"deny\": [\"*/Private*\"] },\n    \"write\": { \"allow\": [\"iCloud/INBOX\", \"iCloud/Archive\", \"On My Mac/Agent*\"], \"deny\": [] }\n  },\n  \"limits\": { \"max_results\": 200, \"max_write_batch\": 20 }\n}",
-  "ICON_COLOR": "#1C7ED6"
+  "POLICY": "{\n  \"version\": 1,\n  \"operations\": {\n    \"allow\": [\n      \"read\",\n      \"mark\",\n      \"move\"\n    ],\n    \"deny\": [\n      \"delete\"\n    ]\n  },\n  \"scopes\": {\n    \"read\": {\n      \"allow\": [\n        \"*\"\n      ],\n      \"deny\": [\n        \"*/Private*\"\n      ]\n    },\n    \"write\": {\n      \"allow\": [\n        \"iCloud/INBOX\",\n        \"iCloud/Archive\",\n        \"On My Mac/Agent*\"\n      ],\n      \"deny\": []\n    }\n  },\n  \"limits\": {\n    \"max_write_batch\": 20\n  }\n}",
+  "ICON_COLOR": "#1C7ED6",
+  "ONELINER": "Read, search and triage Apple Mail from the command line, built for AI coding agents. It cannot send mail.",
+  "PRIVATE_EXAMPLE": "*/Private*",
+  "PERMISSION_HINT": "macOS has not allowed the app that runs the CLI to control Mail",
+  "DATA_NOUN": "your email",
+  "INTEGRATION_NOTE": "Mail cannot delete mailboxes through scripting, so the Mail tests reuse one local mailbox, `On My Mac/agent-cli-test-sandbox`, which they create on the first run. They read real messages but never change them; writes against real messages are only used to check that the policy blocks them.",
+  "ARCHIVE_NOTE": ""
 }

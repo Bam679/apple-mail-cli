@@ -1,0 +1,1 @@
+The approach to fast mailbox listing (bulk property reads, the global message id lookup, parsing bodies outside Mail) follows ideas from [intelligrit/mail-app-cli](https://github.com/intelligrit/mail-app-cli) (MIT). No code was copied.

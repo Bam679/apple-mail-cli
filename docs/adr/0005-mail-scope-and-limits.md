@@ -7,7 +7,7 @@
 Mail is the highest-risk app for agents. Sending is irreversible, and mailbox content is a prime prompt-injection channel. Mail's scripting interface has quirks: message ids change on move; `content()` and `source()` can block while bodies download; mailbox deletion fails with -10000 on current macOS; and messages cannot be created in a mailbox by script. Ideas were taken (not code) from intelligrit/mail-app-cli (MIT): bulk property reads, global `byId`, and body parsing outside Mail.
 
 ## Decision
-- **No send, reply, forward or draft operation exists**, neither in the CLI nor in the bridge script. A test asserts this.
+- No send, reply, forward or draft operation exists, neither in the CLI nor in the bridge script. A test asserts this.
 - Mailboxes are addressed by path `Account/Box/Sub`, and local mailboxes by `On My Mac/Name`. Inboxes are discovered via the unified inbox (no localized names). The account is detected by `emailAddresses()`.
 - Lists use bulk property reads plus one-page `byId` resolution. Bodies come from `source()` (10 MB cap) and are parsed in Go (MIME, charsets, HTML to text), and only for `get`.
 - `move` re-resolves the new id by Message-ID.

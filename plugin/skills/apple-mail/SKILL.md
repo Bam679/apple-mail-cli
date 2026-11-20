@@ -42,7 +42,7 @@ apple-mail delete <id> --confirm                       # moves to the account's 
 | 2 | usage | fix the flags (`--help`) |
 | 3 | not found | the id is stale (messages get new ids when moved), so list again |
 | 4 | policy denied | **stop** and tell the user. Never edit `~/.config/agent-cli/*` and never work around it. |
-| 5 | confirm required | add `--confirm` only if the user wants the change |
+| 5 | confirm required | nothing changed; the plan is on stdout. Show it to the user and rerun with `--confirm` only if they want the change |
 | 6 | permission | the user must allow their terminal app to control Mail (Privacy & Security > Automation) |
 | 7 | unavailable | Mail is busy or a body isn't downloaded yet: retry once, or use `--no-body` |
 | 8 | conflict | the mailbox already exists |
