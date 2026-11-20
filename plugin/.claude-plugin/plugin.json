@@ -1,10 +1,21 @@
 {
   "name": "apple-mail",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Apple Mail CLI for AI agents: list, search and read mail; policy-gated triage (mark, move, trash). Never sends mail.",
-  "author": { "name": "Bam679", "url": "https://github.com/Bam679" },
+  "author": {
+    "name": "Bam679",
+    "url": "https://github.com/Bam679"
+  },
   "homepage": "https://github.com/Bam679/apple-mail-cli",
   "repository": "https://github.com/Bam679/apple-mail-cli",
   "license": "MIT",
-  "keywords": ["apple-mail", "mail", "email", "macos", "jxa", "cli", "agent"]
+  "keywords": [
+    "apple-mail",
+    "mail",
+    "email",
+    "macos",
+    "jxa",
+    "cli",
+    "agent"
+  ]
 }
