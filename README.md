@@ -7,6 +7,11 @@ Read, search, triage and draft Apple Mail from the command line, built for AI co
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/Bam679/apple-mail-cli/badge)](https://scorecard.dev/viewer/?uri=github.com/Bam679/apple-mail-cli)
 [![licence](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/logo-dark.svg">
+  <img alt="apple-mail logo: the agent-cli bracket mark with the apple-mail glyph" src="assets/logo.svg" height="56">
+</picture>
+
 `apple-mail` controls Mail.app through fixed JXA scripts, reads message lists in bulk, and decodes bodies to plain text in Go. Everything runs on your Mac, and the CLI itself makes no network connections. Triage writes stay off until a policy file allows them. Saving drafts is on by default and can be switched off in the same file, and no command can send, reply or forward mail.
 
 Measured on the 20 newest messages across all inboxes (2026-11-20, v0.1.0, macOS 26.6.2): the default text output was 3,051 bytes and `--json` 4,685 bytes, and the command took 4.0 s. Bytes are not tokens, and a mailbox with long subjects will differ; `apple-mail list --limit 20 | wc -c` shows your own number.
