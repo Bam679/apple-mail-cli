@@ -187,7 +187,8 @@ func HTMLToText(s string) string {
 			href, label = attr(tag, "href"), out.Len()
 		case name == "a" && closing:
 			text := out.String()[label:]
-			if href != "" && !strings.HasPrefix(href, "mailto:") && !strings.Contains(text, href) {
+			// Bounded check keeps pathological link-heavy input linear.
+			if href != "" && !strings.HasPrefix(href, "mailto:") && (len(text) > 4096 || !strings.Contains(text, href)) {
 				out.WriteString(" (" + href + ")")
 			}
 			href = ""
