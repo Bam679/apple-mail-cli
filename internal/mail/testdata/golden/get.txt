@@ -1,0 +1,15 @@
+id: 101
+date: 2026-11-18T08:00:00Z
+from: Billing <billing@example.com>
+to: alice@example.org
+subject: Invoice 42
+mailbox: Work/INBOX
+attachments: invoice.pdf (application/pdf, 1000 B)
+body: Hello Alice, the invoice is attached.
+cc: -
+date_sent: -
+flagged: false
+junk: false
+message_id: <a1@example.com>
+read: false
+size: 2048

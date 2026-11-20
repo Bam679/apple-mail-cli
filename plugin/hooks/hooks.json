@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "command -v apple-mail >/dev/null 2>&1 || exit 0; exec apple-mail guard",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

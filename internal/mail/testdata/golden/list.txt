@@ -1,0 +1,3 @@
+102	2026-11-19T08:00:00Z	Bob <bob@example.net>	Lunch?	Work/INBOX
+101	2026-11-18T08:00:00Z	Billing <billing@example.com>	Invoice 42	Work/INBOX
+103	2026-11-02T08:00:00Z	news@example.com	Old news	Work/INBOX

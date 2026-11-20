@@ -1,0 +1,19 @@
+{
+  "REPO": "apple-mail-cli",
+  "BIN": "apple-mail",
+  "TITLE": "Apple Mail",
+  "DESC": "Apple Mail CLI for AI agents: list, search and read mail; policy-gated triage (mark, move, trash). Never sends mail.",
+  "PKG": "mail",
+  "APPLE": true,
+  "GOOS": "darwin",
+  "PLATFORMS": "macOS 14+, Apple Silicon and Intel",
+  "EXAMPLE_OS": "darwin",
+  "KEYWORDS": "\"apple-mail\", \"mail\", \"email\", \"macos\", \"jxa\", \"cli\", \"agent\"",
+  "SCOPE_HELP": "mailbox paths `Account/Mailbox/Sub` (local: `On My Mac/Name`)",
+  "WRITE_OPS": "`mark`, `move`, `delete`, `mailbox-create`",
+  "SYSTEM_POLICY": "/Library/Application Support/agent-cli/apple-mail.json",
+  "INJECTION": "Static JXA script (`go:embed`). Input travels only as one JSON argv element to `/usr/bin/osascript` (absolute path), and fuzz tests check the script and argv shape are invariant. Message bodies are parsed in Go (MIME, HTML to text), never in Mail.",
+  "SECRETS": "No credentials are involved, and the CLI has **no send, draft or forward command**. Attachment contents are never read.",
+  "NETWORK": "",
+  "POLICY": "{\n  \"version\": 1,\n  \"operations\": { \"allow\": [\"read\", \"mark\", \"move\"], \"deny\": [\"delete\"] },\n  \"scopes\": {\n    \"read\":  { \"allow\": [\"*\"], \"deny\": [\"*/Private*\"] },\n    \"write\": { \"allow\": [\"iCloud/INBOX\", \"iCloud/Archive\", \"On My Mac/Agent*\"], \"deny\": [] }\n  },\n  \"limits\": { \"max_results\": 200, \"max_write_batch\": 20 }\n}"
+}

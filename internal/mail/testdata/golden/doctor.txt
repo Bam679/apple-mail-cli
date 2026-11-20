@@ -1,0 +1,1 @@
+mail_automation	true	4 mailboxes visible
