@@ -15,5 +15,6 @@
   "INJECTION": "Static JXA script (`go:embed`). Input travels only as one JSON argv element to `/usr/bin/osascript` (absolute path), and fuzz tests check the script and argv shape are invariant. Message bodies are parsed in Go (MIME, HTML to text), never in Mail.",
   "SECRETS": "No credentials are involved, and the CLI has **no send, draft or forward command**. Attachment contents are never read.",
   "NETWORK": "",
-  "POLICY": "{\n  \"version\": 1,\n  \"operations\": { \"allow\": [\"read\", \"mark\", \"move\"], \"deny\": [\"delete\"] },\n  \"scopes\": {\n    \"read\":  { \"allow\": [\"*\"], \"deny\": [\"*/Private*\"] },\n    \"write\": { \"allow\": [\"iCloud/INBOX\", \"iCloud/Archive\", \"On My Mac/Agent*\"], \"deny\": [] }\n  },\n  \"limits\": { \"max_results\": 200, \"max_write_batch\": 20 }\n}"
+  "POLICY": "{\n  \"version\": 1,\n  \"operations\": { \"allow\": [\"read\", \"mark\", \"move\"], \"deny\": [\"delete\"] },\n  \"scopes\": {\n    \"read\":  { \"allow\": [\"*\"], \"deny\": [\"*/Private*\"] },\n    \"write\": { \"allow\": [\"iCloud/INBOX\", \"iCloud/Archive\", \"On My Mac/Agent*\"], \"deny\": [] }\n  },\n  \"limits\": { \"max_results\": 200, \"max_write_batch\": 20 }\n}",
+  "ICON_COLOR": "#1C7ED6"
 }
