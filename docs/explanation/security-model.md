@@ -4,7 +4,7 @@
 
 ## Read-only by default
 
-Most agent tasks only need to read: find a message, summarise a note, check a date. Writes are where mistakes cost something, and a confused agent writes to the wrong place more often than a malicious one attacks. So a fresh installation can read everything and change nothing. Allowing writes is a deliberate step that the user takes in a file the agent is not supposed to touch.
+Most agent tasks only need to read: find a message, summarise a note, check a date. Writes are where mistakes cost something, and a confused agent writes to the wrong place more often than a malicious one attacks. So a fresh installation can read everything and change nothing. Allowing writes is a deliberate step that the user takes in a file the agent is not supposed to touch. The one exception is `draft`: saving a draft is on by default, because nothing leaves the machine until a person sends it from Mail. `"operations": {"deny": ["draft"]}` turns it off.
 
 ## Why the binary enforces the policy
 

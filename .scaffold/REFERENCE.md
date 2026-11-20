@@ -19,9 +19,12 @@ The default text columns are `id date from subject mailbox`. Lists are sorted by
 
 Policy scopes match mailbox paths. `move` needs write scope on both the source and the target mailbox.
 
+Drafts use the scope `draft:<sender address>` (lower case), or `draft:default` when `--from` is not given and Mail picks the sender. `draft` is on by default: it runs unless `operations.deny` lists `draft` or `write`, or a `scopes.write.deny` pattern matches its scope. `"scopes": {"write": {"deny": ["draft:me@work.example"]}}` blocks drafts from one address only.
+
 ## Behaviour notes
 
 - Without `--mailbox`, `list` and `search` cover the inbox of every account.
 - `search` matches subject and sender, not body text.
 - Bodies are taken from the raw message, decoded in Go (quoted-printable, base64, UTF-8, ISO-8859-1, Windows-1252) and converted from HTML when there is no plain-text part. Hidden elements and tracking pixels are dropped, and links keep their target.
+- `draft` saves a new message in the Drafts mailbox of the sender's account, with `visible` off, and never sends it. Recipients are checked as RFC 5322 addresses; `--from` must be an address of one of your Mail accounts.
 - `delete` moves messages to the account's trash. `mailbox-create` creates local mailboxes under `On My Mac` only.

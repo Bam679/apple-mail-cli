@@ -25,10 +25,22 @@ func TestMain(m *testing.M) {
 
 // fakeBridge is an in-memory Bridge with synthetic data only.
 type fakeBridge struct {
-	boxes []Mailbox
-	msgs  []Message
-	next  int
-	fail  error
+	boxes  []Mailbox
+	msgs   []Message
+	drafts []Draft
+	next   int
+	fail   error
+}
+
+func (f *fakeBridge) SaveDraft(_ context.Context, d Draft) (Draft, error) {
+	if f.fail != nil {
+		return Draft{}, f.fail
+	}
+	if d.From == "" {
+		d.From = "Alice <alice@example.org>"
+	}
+	f.drafts = append(f.drafts, d)
+	return d, nil
 }
 
 func newFake() *fakeBridge {
@@ -354,12 +366,81 @@ func TestBridgeErrors(t *testing.T) {
 
 func TestNoSendCommandExists(t *testing.T) {
 	_, out, _ := run(t, newFake(), readOnly, "schema")
-	for _, forbidden := range []string{`"send"`, `"reply"`, `"forward"`, `"draft"`} {
+	for _, forbidden := range []string{`"send"`, `"reply"`, `"forward"`} {
 		if strings.Contains(out, `"name": `+forbidden) {
 			t.Fatalf("schema must not contain %s", forbidden)
 		}
 	}
-	if strings.Contains(script, "send(") || strings.Contains(script, "outgoingMessage") || strings.Contains(script, "OutgoingMessage") {
-		t.Fatal("bridge script must not be able to send mail")
+	for _, forbidden := range []string{".send(", "send:", "M.send", "reply(", "forward("} {
+		if strings.Contains(script, forbidden) {
+			t.Fatalf("bridge script must not be able to send mail (%q)", forbidden)
+		}
+	}
+}
+
+func TestDraftIsOnByDefault(t *testing.T) {
+	b := newFake()
+	code, out, e := run(t, b, readOnly, "draft", "--to", "Bob <bob@example.net>", "--subject", "Hi", "--body", "Text", "--confirm", "--json")
+	if code != 0 || len(b.drafts) != 1 || b.drafts[0].To[0] != "bob@example.net" || !strings.Contains(out, `"saved":true`) {
+		t.Fatalf("draft with the default policy: %d %s %s", code, out, e)
+	}
+	if code, _, _ := run(t, b, readOnly, "draft", "--subject", "Hi"); code != agentcli.ExitConfirm || len(b.drafts) != 1 {
+		t.Fatal("draft without --confirm must only print the plan")
+	}
+	// A policy file that does not mention drafts keeps them on.
+	quiet := agentcli.Effective{Layers: []agentcli.Policy{{Version: 1, Operations: agentcli.OpRule{Allow: []string{"read", "mark"}}}}}
+	if code, _, _ := run(t, b, quiet, "draft", "--subject", "Hi", "--confirm"); code != 0 || len(b.drafts) != 2 {
+		t.Fatal("drafts must stay on unless the policy denies them")
+	}
+}
+
+func TestDraftCanBeDisabled(t *testing.T) {
+	for name, pol := range map[string]agentcli.Policy{
+		"deny draft":   {Version: 1, Operations: agentcli.OpRule{Allow: []string{"read"}, Deny: []string{"draft"}}},
+		"deny write":   {Version: 1, Operations: agentcli.OpRule{Allow: []string{"read"}, Deny: []string{"write"}}},
+		"deny sender":  {Version: 1, Operations: agentcli.OpRule{Allow: []string{"read"}}, Scopes: agentcli.ScopeRules{Write: agentcli.Rule{Deny: []string{"draft:alice@*"}}}},
+		"deny default": {Version: 1, Operations: agentcli.OpRule{Allow: []string{"read"}}, Scopes: agentcli.ScopeRules{Write: agentcli.Rule{Deny: []string{"draft:*"}}}},
+	} {
+		b := newFake()
+		eff := agentcli.Effective{Layers: []agentcli.Policy{pol}}
+		args := []string{"draft", "--subject", "Hi", "--confirm"}
+		if name == "deny sender" {
+			args = append(args, "--from", "alice@example.org")
+		}
+		if code, _, e := run(t, b, eff, args...); code != agentcli.ExitPolicy || len(b.drafts) != 0 {
+			t.Fatalf("%s: exit %d %s", name, code, e)
+		}
+	}
+}
+
+func TestDraftValidation(t *testing.T) {
+	cases := map[string][]string{
+		"empty":     {"draft", "--to", "bob@example.net", "--dry-run"},
+		"bad to":    {"draft", "--to", "not an address", "--subject", "x", "--dry-run"},
+		"bad cc":    {"draft", "--cc", "@@", "--subject", "x", "--dry-run"},
+		"bad bcc":   {"draft", "--bcc", "x", "--subject", "x", "--dry-run"},
+		"bad from":  {"draft", "--from", "nope", "--subject", "x", "--dry-run"},
+		"bad arg":   {"draft", "x", "--dry-run"},
+		"bad stdin": {"draft", "-", "--dry-run"},
+	}
+	for name, args := range cases {
+		if code, _, _ := run(t, newFake(), readOnly, args...); code != agentcli.ExitUsage {
+			t.Errorf("%s: exit %d", name, code)
+		}
+	}
+	if code, _, _ := run(t, newFake(), readOnly, "draft", "--from", "eve@example.com", "--subject", "x", "--dry-run"); code != agentcli.ExitNotFound {
+		t.Error("a sender that is not an account address must be rejected")
+	}
+	b := newFake()
+	in := `{"to":["a@example.com"],"subject":"One","from":"alice@example.org"}` + "\n" + `{"subject":"Two","body":"b"}`
+	app := NewApp(b, "test")
+	app.LoadPolicy = func() (agentcli.Effective, error) { return readOnly, nil }
+	var out, errb bytes.Buffer
+	if code := app.Main(context.Background(), []string{"draft", "-", "--confirm"}, strings.NewReader(in), &out, &errb); code != 0 || len(b.drafts) != 2 || b.drafts[0].From != "alice@example.org" {
+		t.Fatalf("stdin drafts: %d %s", code, errb.String())
+	}
+	b.fail = agentcli.Unavailablef("busy")
+	if code, _, _ := run(t, b, readOnly, "draft", "--subject", "x", "--confirm"); code != agentcli.ExitUnavailable {
+		t.Fatal("bridge errors must surface")
 	}
 }

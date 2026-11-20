@@ -8,7 +8,7 @@ This guide shows you how to decide what an AI agent may do with `apple-mail`. It
 apple-mail policy
 ```
 
-Without a policy file the output says `built-in default (read-only)`. In that state every write exits with code 4.
+Without a policy file the output says `built-in default (read-only)`. In that state every write exits with code 4. The one exception is `draft`: saving a draft is on by default, because nothing leaves the machine until a person sends it from Mail. `"operations": {"deny": ["draft"]}` turns it off.
 
 ## Allow writes in one container
 
@@ -18,8 +18,8 @@ Without a policy file the output says `built-in default (read-only)`. In that st
    apple-mail policy --example
    ```
 
-2. Save it as `~/.config/agent-cli/apple-mail.json` and keep only the operations you want under `operations.allow`. The write operations are `mark`, `move`, `delete`, `mailbox-create`.
-3. Put the containers the agent may change under `scopes.write.allow`. Scopes are glob patterns over mailbox paths `Account/Mailbox/Sub` (local: `On My Mac/Name`); `*` matches any text.
+2. Save it as `~/.config/agent-cli/apple-mail.json` and keep only the operations you want under `operations.allow`. The write operations are `draft` (on by default), `mark`, `move`, `delete`, `mailbox-create`.
+3. Put the containers the agent may change under `scopes.write.allow`. Scopes are glob patterns over mailbox paths `Account/Mailbox/Sub` (local: `On My Mac/Name`) and, for drafts, `draft:<sender address>` or `draft:default`; `*` matches any text.
 4. Make the file private to you:
 
    ```sh

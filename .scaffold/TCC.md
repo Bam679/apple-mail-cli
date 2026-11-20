@@ -1,4 +1,4 @@
-## macOS privacy permission
+### macOS privacy permission
 
 `apple-mail` controls Mail.app with Apple Events through `/usr/bin/osascript`. macOS asks on first use whether the app that runs the CLI (Terminal, iTerm, VS Code or Claude) may control Mail. If you declined, open System Settings > Privacy & Security > Automation, find your terminal app and switch on Mail. Full Disk Access is not needed, because the CLI never reads Mail's database files. Mail starts automatically when a command needs it. `apple-mail doctor` shows whether access works; without it, commands exit with code 6.
 

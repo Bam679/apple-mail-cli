@@ -1,6 +1,6 @@
 // Static Mail.app bridge. Never interpolate input into this file: all input
 // arrives as decoded JSON in `a` (see osa.Prelude). There is deliberately no
-// operation that sends, drafts or forwards mail.
+// operation that sends, replies or forwards; `draft` only saves a draft.
 const M = Application('Mail');
 const LOCAL = 'On My Mac';
 
@@ -184,6 +184,17 @@ const OPS = {
     const s = summary(m);
     M.delete(m);
     return s;
+  },
+  draft: function (a) {
+    const props = { subject: a.subject, content: a.body, visible: false };
+    if (a.from) props.sender = a.from;
+    const msg = M.OutgoingMessage(props);
+    M.outgoingMessages.push(msg);
+    (a.to || []).forEach(function (x) { msg.toRecipients.push(M.ToRecipient({ address: x })); });
+    (a.cc || []).forEach(function (x) { msg.ccRecipients.push(M.CcRecipient({ address: x })); });
+    (a.bcc || []).forEach(function (x) { msg.bccRecipients.push(M.BccRecipient({ address: x })); });
+    msg.save();
+    return { subject: a.subject, from: msg.sender(), to: a.to || [], saved: true };
   },
   mailbox_create: function (a) {
     M.make({ new: 'mailbox', withProperties: { name: a.name } });

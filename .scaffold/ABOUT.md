@@ -1,1 +1,0 @@
-`apple-mail` lets an AI agent find, read and sort your email without being able to send any. It controls Mail.app through static JXA scripts, decodes message bodies to plain text, and stays read-only until you allow triage actions in a policy file. The checks run inside the binary, so they apply to every agent, whether that is Claude Code, Codex, Cursor or a script.

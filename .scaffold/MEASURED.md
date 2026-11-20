@@ -1,0 +1,1 @@
+Measured on the 20 newest messages across all inboxes (2026-11-20, v0.1.0, macOS 26.6.2): the default text output was 3,051 bytes and `--json` 4,685 bytes, and the command took 4.0 s. Bytes are not tokens, and a mailbox with long subjects will differ; `apple-mail list --limit 20 | wc -c` shows your own number.

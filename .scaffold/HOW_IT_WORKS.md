@@ -1,0 +1,1 @@
+`apple-mail` runs one fixed JXA script through `/usr/bin/osascript`, which controls Mail with Apple Events. Lists read message properties in bulk and resolve one page at a time. `get` fetches the raw message and decodes MIME, character sets and HTML in Go. Your input reaches the script as a single JSON argument, so it never becomes code.

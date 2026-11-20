@@ -1,0 +1,1 @@
+`apple-mail` controls Mail.app through fixed JXA scripts, reads message lists in bulk, and decodes bodies to plain text in Go. Everything runs on your Mac, and the CLI itself makes no network connections. Triage writes stay off until a policy file allows them. Saving drafts is on by default and can be switched off in the same file, and no command can send, reply or forward mail.

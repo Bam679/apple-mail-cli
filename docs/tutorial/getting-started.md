@@ -68,12 +68,24 @@ The command exits with code 5 and shows the message it would flag. Run it with `
 apple-mail mark <id> --flag --confirm
 ```
 
+## Save a draft
+
+Drafts are allowed without any policy change. Save one addressed to yourself:
+
+```sh
+apple-mail draft --to you@example.com --subject "Agent tutorial" --body "Saved by apple-mail."
+```
+
+The command exits with code 5 and prints the draft it would save. Run it with `--confirm`, and the draft appears in the Drafts mailbox in Mail. Nothing is sent.
+
 ## Clean up
 
 ```sh
 apple-mail mark <id> --unflag --confirm
 rm ~/.config/agent-cli/apple-mail.json
 ```
+
+Delete the tutorial draft in Mail's Drafts mailbox.
 
 ## What you have done
 

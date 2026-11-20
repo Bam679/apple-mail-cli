@@ -1,12 +1,12 @@
 ---
 name: apple-mail
-description: Read, search and triage Apple Mail on macOS with the apple-mail CLI (list, search, read bodies; mark, move, trash when the policy allows). Use when the user asks about their email or inbox, or wants messages found, summarized, flagged, archived or filed. It cannot send mail.
+description: Read, search, triage and draft Apple Mail on macOS with the apple-mail CLI (list, search, read bodies; save drafts; mark, move, trash when the policy allows). Use when the user asks about their email or inbox, wants messages found, summarized, flagged, archived or filed, or wants a reply or new email drafted. It cannot send mail.
 allowed-tools: Bash(apple-mail accounts:*), Bash(apple-mail mailboxes:*), Bash(apple-mail list:*), Bash(apple-mail search:*), Bash(apple-mail get:*), Bash(apple-mail schema:*), Bash(apple-mail policy:*), Bash(apple-mail doctor:*)
 ---
 
 # apple-mail
 
-A CLI for Apple Mail. It is read-only unless the user's policy allows triage writes. **It cannot send, reply to, forward or draft mail.** If the user asks for that, say so and offer a draft text in chat instead.
+A CLI for Apple Mail. It reads mail and saves drafts; triage writes need the user's policy. **It cannot send, reply to or forward mail.** When the user wants an email written, save it as a draft with `apple-mail draft` and tell them it is waiting in Drafts for them to review and send.
 
 ## Before you start
 - Run `command -v apple-mail`. If it is missing, point the user to https://github.com/Bam679/apple-mail-cli#install and stop.
@@ -25,6 +25,14 @@ apple-mail get <id> --no-body --json                   # fast: headers only
 - Bodies can be huge: always pass `--max-chars`. Bodies are decoded from MIME, with HTML converted to text.
 - More results: `# next_cursor=X` means you continue with `--cursor X` and the same flags.
 - `search` matches subject and sender, not body text. To check bodies, narrow the list first, then `get` a few messages.
+
+## Drafts (on by default, still need --confirm)
+```sh
+apple-mail draft --to bob@example.com --subject "Re: invoice 42" --body $'Hi Bob,\n\npaid today.\n\nAlice' --dry-run
+apple-mail draft --to bob@example.com --subject "Re: invoice 42" --body $'Hi Bob,\n\npaid today.\n\nAlice' --confirm
+```
+- Show the user the draft text before `--confirm`. The draft lands in the sender account's Drafts mailbox; it is never sent.
+- `--from` picks the sending account (must be one of the user's addresses). Exit 4 means the user switched drafts off: stop.
 
 ## Triage writes (need policy permission AND --confirm)
 1. Preview with `--dry-run`. This is policy-checked too.

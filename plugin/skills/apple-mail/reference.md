@@ -18,12 +18,13 @@
 | `mark <id>…` | mark | `--read`/`--unread`, `--flag`/`--unflag` |
 | `move <id>… --to M` | move | write scope needed on the source and target |
 | `delete <id>…` | delete | moves to the account's trash |
+| `draft` | draft | on by default; `--to/--cc/--bcc` (repeatable), `--subject`, `--body`, `--from`, or `-` with JSON objects. Scope `draft:<from address>` or `draft:default`. Never sends. |
 | `mailbox-create <name>` | mailbox-create | local `On My Mac/<name>` only. Mail can't delete mailboxes via scripting. |
 
 Dates: `YYYY-MM-DD`, `YYYY-MM-DDTHH:MM`, `today`, `yesterday`, `-7d`.
 
 ## Policy (user-owned, read-only for agents)
-`~/.config/agent-cli/apple-mail.json`. Scopes match **mailbox paths**. Example: allow triage in the inbox and archive only, never trash:
+`~/.config/agent-cli/apple-mail.json`. Scopes match **mailbox paths**. Drafts are on unless the policy denies `draft` (or `write`). Example: allow triage in the inbox and archive only, never trash, and switch drafts off:
 ```json
-{"version":1,"operations":{"allow":["read","mark","move"],"deny":["delete"]},"scopes":{"read":{"allow":["*"],"deny":["*/Private*"]},"write":{"allow":["iCloud/INBOX","iCloud/Archive"]}}}
+{"version":1,"operations":{"allow":["read","mark","move"],"deny":["delete","draft"]},"scopes":{"read":{"allow":["*"],"deny":["*/Private*"]},"write":{"allow":["iCloud/INBOX","iCloud/Archive"]}}}
 ```

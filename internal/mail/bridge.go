@@ -1,6 +1,6 @@
 // Package mail implements the apple-mail CLI on top of a Bridge to Mail.app
 // (JXA in production, a fake in tests). There is intentionally no way to
-// send, draft or forward mail.
+// send, reply or forward mail; drafts are saved, never sent.
 package mail
 
 import (
@@ -72,6 +72,17 @@ type Page struct {
 	Items []Message
 }
 
+// Draft is a new draft. It is saved in the sender account's Drafts mailbox
+// and never sent.
+type Draft struct {
+	From    string   `json:"from"`
+	To      []string `json:"to"`
+	CC      []string `json:"cc"`
+	BCC     []string `json:"bcc"`
+	Subject string   `json:"subject"`
+	Body    string   `json:"body"`
+}
+
 // Bridge is the OS boundary. Implementations must not interpret input as code.
 type Bridge interface {
 	Accounts(ctx context.Context) ([]Account, error)
@@ -83,6 +94,7 @@ type Bridge interface {
 	Move(ctx context.Context, id, to string) (Message, error)
 	Delete(ctx context.Context, id string) (Message, error)
 	CreateMailbox(ctx context.Context, name string) (Mailbox, error)
+	SaveDraft(ctx context.Context, d Draft) (Draft, error)
 }
 
 // MaxSource is the largest raw message fetched for body extraction.
@@ -210,4 +222,11 @@ func (j *JXA) CreateMailbox(ctx context.Context, name string) (Mailbox, error) {
 	var m Mailbox
 	err := j.Runner.Run(ctx, script, "mailbox_create", map[string]string{"name": name}, &m)
 	return m, err
+}
+
+// SaveDraft implements Bridge.
+func (j *JXA) SaveDraft(ctx context.Context, d Draft) (Draft, error) {
+	var out Draft
+	err := j.Runner.Run(ctx, script, "draft", d, &out)
+	return out, err
 }

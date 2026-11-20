@@ -5,9 +5,13 @@ package mail
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
+	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/Bam679/apple-mail-cli/internal/agentcli"
 )
@@ -101,5 +105,55 @@ func TestIntegrationMail(t *testing.T) {
 	after, err := b.Get(ctx, id, false)
 	if err != nil || after.Read != before.Read || after.Mailbox != before.Mailbox {
 		t.Fatal("a denied write changed the real message")
+	}
+}
+
+// TestIntegrationDraft saves one draft with a unique subject in the default
+// account, finds it and moves it to the trash. It writes to a server-synced
+// Drafts mailbox, so it only runs with AGENT_CLI_MAIL_DRAFT_TEST=1.
+func TestIntegrationDraft(t *testing.T) {
+	if os.Getenv("AGENT_CLI_MAIL_DRAFT_TEST") != "1" {
+		t.Skip("set AGENT_CLI_MAIL_DRAFT_TEST=1 to save and delete a real draft")
+	}
+	ctx := context.Background()
+	b := NewJXA()
+	buf := make([]byte, 4)
+	_, _ = rand.Read(buf)
+	token := "agent-cli-test-draft-" + hex.EncodeToString(buf)
+	app := NewApp(b, "it")
+	app.LoadPolicy = func() (agentcli.Effective, error) {
+		return agentcli.Effective{Layers: []agentcli.Policy{agentcli.DefaultPolicy()}}, nil
+	}
+	var out, errb bytes.Buffer
+	code := app.Main(ctx, []string{"draft", "--subject", token, "--body", "Synthetic test draft, safe to delete.", "--confirm", "--json"}, strings.NewReader(""), &out, &errb)
+	if code != 0 || !strings.Contains(out.String(), `"saved":true`) {
+		t.Fatalf("draft with the default policy: %d %s", code, errb.String())
+	}
+	boxes, err := b.Mailboxes(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var paths []string
+	for _, m := range boxes {
+		paths = append(paths, m.Path)
+	}
+	var found Message
+	for i := 0; i < 20 && found.ID == ""; i++ {
+		page, err := b.Messages(ctx, Query{Paths: paths, Limit: 5, Text: token, SubjectOnly: true})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(page.Items) > 0 {
+			found = page.Items[0]
+			break
+		}
+		time.Sleep(time.Second)
+	}
+	if found.ID == "" {
+		t.Fatal("saved draft not found in any mailbox")
+	}
+	t.Logf("draft saved in %s", found.Mailbox)
+	if _, err := b.Delete(ctx, found.ID); err != nil {
+		t.Fatalf("cleanup: %v", err)
 	}
 }

@@ -2,6 +2,7 @@ package mail
 
 import (
 	"context"
+	netmail "net/mail"
 	"sort"
 	"strconv"
 	"strings"
@@ -30,9 +31,10 @@ func NewApp(b Bridge, version string) *agentcli.App {
 	return &agentcli.App{
 		Name:         "apple-mail",
 		Version:      version,
-		Summary:      "Apple Mail for AI agents: read and triage mail; never sends (writes need the policy)",
+		Summary:      "Apple Mail for AI agents: read, triage and draft mail; never sends",
 		ScopeHelp:    "mailbox path \"Account/Mailbox/Sub\" (local: \"On My Mac/Name\")",
 		ScopeExample: "On My Mac/Agent*",
+		DefaultOn:    []string{"draft"},
 		Commands: []*agentcli.Command{
 			{Name: "accounts", Summary: "list Mail accounts", Kind: agentcli.Read,
 				Fields: []string{"name", "enabled"}, AllFields: []string{"name", "enabled", "emails"}, Run: h.accounts},
@@ -53,6 +55,18 @@ func NewApp(b Bridge, version string) *agentcli.App {
 				Example: "apple-mail get 123456 --max-chars 6000"},
 			{Name: "doctor", Summary: "check permissions and connectivity", Kind: agentcli.Read,
 				Fields: []string{"check", "ok", "detail"}, Run: h.doctor},
+			{Name: "draft", Summary: "save a new draft in Mail's Drafts mailbox (never sends)", Kind: agentcli.Write, Op: "draft",
+				Args: []agentcli.Arg{{Name: "input", Usage: "'-' to read JSON objects from stdin"}},
+				Flags: []agentcli.Flag{
+					{Name: "to", Type: agentcli.Strings, Usage: "recipient address (repeatable)"},
+					{Name: "cc", Type: agentcli.Strings, Usage: "cc address (repeatable)"},
+					{Name: "bcc", Type: agentcli.Strings, Usage: "bcc address (repeatable)"},
+					{Name: "subject", Type: agentcli.String, Usage: "subject"},
+					{Name: "body", Type: agentcli.String, Usage: "plain-text body"},
+					{Name: "from", Type: agentcli.String, Usage: "sender address of one of your accounts (default: Mail's default)"}},
+				Stdin:  `{"to":["a@example.com"],"cc":[],"bcc":[],"subject":"…","body":"…","from":"me@example.com"} (one per line)`,
+				Fields: []string{"from", "to", "subject"}, AllFields: []string{"from", "to", "cc", "subject", "saved"}, Plan: h.draft,
+				Example: "apple-mail draft --to bob@example.com --subject 'Re: invoice' --body 'Thanks, paid today.' --confirm"},
 			{Name: "mark", Summary: "set read/unread and flagged/unflagged", Kind: agentcli.Write, Op: "mark",
 				Args: []agentcli.Arg{{Name: "id", Usage: "message id(s)", Required: true, Variadic: true}},
 				Flags: []agentcli.Flag{{Name: "read", Type: agentcli.Bool, Usage: "mark read"}, {Name: "unread", Type: agentcli.Bool, Usage: "mark unread"},
@@ -361,4 +375,106 @@ func (h *handlers) mailboxCreate(c *agentcli.Ctx) (*agentcli.WritePlan, error) {
 			}
 			return []agentcli.Item{{"path": m.Path, "account": m.Account, "unread": m.Unread}}, nil
 		}}, nil
+}
+
+type draftInput struct {
+	To      []string `json:"to"`
+	CC      []string `json:"cc"`
+	BCC     []string `json:"bcc"`
+	Subject string   `json:"subject"`
+	Body    string   `json:"body"`
+	From    string   `json:"from"`
+}
+
+// draftScope is the policy scope of a draft: "draft:<sender address>", or
+// "draft:default" when Mail picks the sender.
+func draftScope(from string) string {
+	if from == "" {
+		return "draft:default"
+	}
+	return "draft:" + strings.ToLower(from)
+}
+
+func addresses(field string, in []string) ([]string, error) {
+	var out []string
+	for _, a := range in {
+		p, err := netmail.ParseAddress(a)
+		if err != nil {
+			return nil, agentcli.Usagef("invalid %s address %q", field, a)
+		}
+		out = append(out, p.Address)
+	}
+	return out, nil
+}
+
+func (h *handlers) draft(c *agentcli.Ctx) (*agentcli.WritePlan, error) {
+	var ins []draftInput
+	if len(c.Args) > 0 {
+		if c.Args[0] != "-" {
+			return nil, agentcli.Usagef("the only positional argument is '-' (stdin)")
+		}
+		var err error
+		if ins, err = agentcli.DecodeInputs[draftInput](c.Stdin); err != nil {
+			return nil, err
+		}
+	} else {
+		ins = []draftInput{{To: c.Strings("to"), CC: c.Strings("cc"), BCC: c.Strings("bcc"),
+			Subject: c.String("subject"), Body: c.String("body"), From: c.String("from")}}
+	}
+	var senders map[string]bool
+	var drafts []Draft
+	var scopes []string
+	var targets []agentcli.Item
+	for i, in := range ins {
+		if strings.TrimSpace(in.Subject) == "" && strings.TrimSpace(in.Body) == "" {
+			return nil, agentcli.Usagef("draft %d: subject or body is required", i+1)
+		}
+		d := Draft{Subject: in.Subject, Body: in.Body}
+		var err error
+		if d.To, err = addresses("to", in.To); err != nil {
+			return nil, err
+		}
+		if d.CC, err = addresses("cc", in.CC); err != nil {
+			return nil, err
+		}
+		if d.BCC, err = addresses("bcc", in.BCC); err != nil {
+			return nil, err
+		}
+		if in.From != "" {
+			from, err := addresses("from", []string{in.From})
+			if err != nil {
+				return nil, err
+			}
+			if senders == nil {
+				senders = map[string]bool{}
+				as, err := h.b.Accounts(c)
+				if err != nil {
+					return nil, err
+				}
+				for _, a := range as {
+					for _, e := range a.Emails {
+						senders[strings.ToLower(e)] = true
+					}
+				}
+			}
+			if !senders[strings.ToLower(from[0])] {
+				return nil, agentcli.NotFoundf("%s is not an address of any Mail account", from[0])
+			}
+			d.From = from[0]
+		}
+		drafts = append(drafts, d)
+		scopes = append(scopes, draftScope(d.From))
+		targets = append(targets, agentcli.Item{"from": d.From, "to": nonNil(d.To), "cc": nonNil(d.CC), "subject": d.Subject})
+	}
+	return &agentcli.WritePlan{Scopes: scopes, Targets: targets, Apply: func(ctx context.Context) ([]agentcli.Item, error) {
+		var out []agentcli.Item
+		for _, d := range drafts {
+			saved, err := h.b.SaveDraft(ctx, d)
+			if err != nil {
+				return nil, partial(err, len(out), len(drafts))
+			}
+			out = append(out, agentcli.Item{"from": saved.From, "to": nonNil(d.To), "cc": nonNil(d.CC), "subject": d.Subject, "saved": true})
+		}
+		return out, nil
+	}}, nil
 }

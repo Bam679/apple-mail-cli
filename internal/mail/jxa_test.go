@@ -13,7 +13,7 @@ func TestScriptIsStatic(t *testing.T) {
 	if !strings.Contains(script, "const OPS") || strings.Contains(script, "%s") {
 		t.Fatal("static OPS table expected")
 	}
-	for _, op := range []string{"accounts", "mailboxes", "inboxes", "messages", "get", "mark", "move", "delete", "mailbox_create"} {
+	for _, op := range []string{"accounts", "mailboxes", "inboxes", "messages", "get", "mark", "move", "delete", "mailbox_create", "draft"} {
 		if !strings.Contains(script, "  "+op+": function") {
 			t.Errorf("missing op %s", op)
 		}
@@ -72,6 +72,9 @@ func TestJXAWireMapping(t *testing.T) {
 	}
 	if _, err := j.Delete(ctx, "7"); err != nil {
 		t.Fatal(err)
+	}
+	if _, err := j.SaveDraft(ctx, Draft{Subject: "s", To: []string{"a@example.com"}}); err != nil || !strings.Contains(seen["draft"], `"to":["a@example.com"]`) {
+		t.Fatalf("draft args: %s %v", seen["draft"], err)
 	}
 	if _, err := j.CreateMailbox(ctx, "x"); err != nil || NewJXA().Runner == nil {
 		t.Fatal(err)

@@ -1,0 +1,4 @@
+- You want the agent to send or answer mail on its own. The CLI can only save drafts; you send them from Mail.
+- You need to search message bodies across large mailboxes. `search` matches subjects and senders only, because reading every body through Mail is slow.
+- You need to delete mailboxes. Mail's scripting interface can't; do it in Mail.
+- Your agent cannot run shell commands. An MCP server fits better there.

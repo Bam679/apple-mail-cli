@@ -20,13 +20,14 @@ Flags can appear before or after arguments. Every flag has two dashes. `--` ends
 | `search <text> [same filters] [--subject-only]` | read | subject/sender contains text |
 | `get <id> [--no-body]` | read | headers, recipients, attachment list and plain-text body (MIME and HTML decoded in Go) |
 | `doctor` | read | permission check |
+| `draft --to A… [--cc A…] [--bcc A…] --subject S --body B [--from A]` / `draft -` | write `draft`, on by default | save a new draft in the sender account's Drafts mailbox; never sends |
 | `mark <id>… --read\|--unread\|--flag\|--unflag` | write `mark` | triage |
 | `move <id>… --to M` | write `move` | needs write scope on source and target; ids change after a move |
 | `delete <id>…` | write `delete` | moves to the account's trash |
 | `mailbox-create <name>` | write `mailbox-create` | local mailbox under `On My Mac` |
 | `schema`, `policy`, `guard`, `version` | builtin | contract, effective policy, hook guard, version |
 
-There is no send, reply, forward or draft command. Message IDs are Mail's numeric ids.
+`draft` is the only write that is on by default; `"operations": {"deny": ["draft"]}` switches it off. There is no send, reply or forward command. Message IDs are Mail's numeric ids.
 
 ## Global flags
 
@@ -104,11 +105,14 @@ The default text columns are `id date from subject mailbox`. Lists are sorted by
 
 Policy scopes match mailbox paths. `move` needs write scope on both the source and the target mailbox.
 
+Drafts use the scope `draft:<sender address>` (lower case), or `draft:default` when `--from` is not given and Mail picks the sender. `draft` is on by default: it runs unless `operations.deny` lists `draft` or `write`, or a `scopes.write.deny` pattern matches its scope. `"scopes": {"write": {"deny": ["draft:me@work.example"]}}` blocks drafts from one address only.
+
 ## Behaviour notes
 
 - Without `--mailbox`, `list` and `search` cover the inbox of every account.
 - `search` matches subject and sender, not body text.
 - Bodies are taken from the raw message, decoded in Go (quoted-printable, base64, UTF-8, ISO-8859-1, Windows-1252) and converted from HTML when there is no plain-text part. Hidden elements and tracking pixels are dropped, and links keep their target.
+- `draft` saves a new message in the Drafts mailbox of the sender's account, with `visible` off, and never sends it. Recipients are checked as RFC 5322 addresses; `--from` must be an address of one of your Mail accounts.
 - `delete` moves messages to the account's trash. `mailbox-create` creates local mailboxes under `On My Mac` only.
 
 ## Policy file
@@ -118,7 +122,7 @@ Path: `~/.config/agent-cli/apple-mail.json`. The home directory comes from the u
 | Key | Type | Meaning |
 |---|---|---|
 | `version` | int | Must be `1`. |
-| `operations.allow` | string list | `read`, `write` (every write operation), or single operations: `mark`, `move`, `delete`, `mailbox-create`. |
+| `operations.allow` | string list | `read`, `write` (every write operation), or single operations: `draft` (on by default), `mark`, `move`, `delete`, `mailbox-create`. |
 | `operations.deny` | string list | Denied operations. Deny wins over allow. |
 | `scopes.read.allow` | glob list | Containers that may be read. Empty means all. |
 | `scopes.read.deny` | glob list | Containers hidden from every read. |
@@ -126,7 +130,7 @@ Path: `~/.config/agent-cli/apple-mail.json`. The home directory comes from the u
 | `scopes.write.deny` | glob list | Containers that may never be changed. |
 | `limits.max_write_batch` | int | Maximum number of items one write command may change (default 100). |
 
-Scope strings are mailbox paths `Account/Mailbox/Sub` (local: `On My Mac/Name`). In patterns `*` matches any text, including `/`; matching is case-sensitive.
+Scope strings are mailbox paths `Account/Mailbox/Sub` (local: `On My Mac/Name`) and, for drafts, `draft:<sender address>` or `draft:default`. In patterns `*` matches any text, including `/`; matching is case-sensitive.
 
 Without a file, the default policy allows `read` on everything and no writes. The CLI rejects files that are not regular files, that are writable by group or others, that another user owns, or that contain unknown keys or invalid JSON. A rejected file denies every command except `schema`, `policy`, `version`, `help` and `guard`.
 

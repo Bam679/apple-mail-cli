@@ -1,6 +1,0 @@
-- Mailboxes with paths and unread counts, newest-first lists across all inboxes, and search by subject or sender
-- Message bodies decoded from MIME and HTML into plain text, with attachment names but never attachment content
-- Triage: mark read or unread, flag, move and move to trash
-- No send, reply, forward or draft command exists, so an agent cannot send mail through this tool
-- Writes stay off until a policy file allows them, per operation and per mailbox
-- A Claude Code plugin with a skill for agents and a hook that protects the policy file
