@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/Bam679/apple-mail-cli/compare/v0.1.0...v0.2.0) (2026-11-20)
+
+
+### Features
+
+* **draft:** save drafts in Mail, on unless the policy denies them ([f6cb0ef](https://github.com/Bam679/apple-mail-cli/commit/f6cb0ef8584fa2d8fc5d6bd5ad674642964e5e13))
+
 ## 0.1.0 (2026-11-20)
 
 
